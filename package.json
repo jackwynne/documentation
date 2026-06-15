@@ -10,14 +10,14 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.37.2",
-    "@astrojs/starlight-tailwind": "^4.0.2",
+    "@astrojs/starlight": "^0.40.0",
+    "@astrojs/starlight-tailwind": "^5.0.0",
     "@astrojs/tailwind": "^6.0.2",
-    "@astrojs/vercel": "^9.0.3",
-    "@tailwindcss/vite": "^4.1.18",
-    "astro": "^5.16.9",
-    "sharp": "^0.34.5",
-    "tailwindcss": "^4.1.18"
+    "@astrojs/vercel": "^10.0.8",
+    "@tailwindcss/vite": "^4.3.1",
+    "astro": "^6.4.7",
+    "sharp": "^0.35.1",
+    "tailwindcss": "^4.3.1"
   },
   "packageManager": "pnpm@10.15.1+sha512.34e538c329b5553014ca8e8f4535997f96180a1d0f614339357449935350d924e22f8614682191264ec33d1462ac21561aff97f6bb18065351c162c7e8f6de67"
 }
