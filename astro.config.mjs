@@ -2,8 +2,6 @@ import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 import tailwind from "@astrojs/tailwind";
 
-import vercel from "@astrojs/vercel/serverless";
-
 import tailwindcss from "@tailwindcss/vite";
 
 // https://astro.build/config
@@ -25,27 +23,43 @@ export default defineConfig({
       sidebar: [
         {
           label: "Power BI",
-          autogenerate: {
-            directory: "powerbi",
-          },
+          items: [
+            {
+              autogenerate: {
+                directory: "powerbi",
+              },
+            },
+          ],
         },
         {
           label: "Azure",
-          autogenerate: {
-            directory: "azure",
-          },
+          items: [
+            {
+              autogenerate: {
+                directory: "azure",
+              },
+            },
+          ],
         },
         {
           label: "Windows",
-          autogenerate: {
-            directory: "windows",
-          },
+          items: [
+            {
+              autogenerate: {
+                directory: "windows",
+              },
+            },
+          ],
         },
         {
           label: "Spark",
-          autogenerate: {
-            directory: "spark",
-          },
+          items: [
+            {
+              autogenerate: {
+                directory: "spark",
+              },
+            },
+          ],
         },
       ],
 
