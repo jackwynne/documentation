@@ -41,12 +41,6 @@ export default defineConfig({
             directory: "windows",
           },
         },
-        {
-          label: "Spark",
-          autogenerate: {
-            directory: "spark",
-          },
-        },
       ],
 
       customCss: [
