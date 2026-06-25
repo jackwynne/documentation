@@ -43,6 +43,16 @@ jobs:
         if: steps.should-run.outputs.run == 'true'
         uses: actions/checkout@v5
 
+      - name: Send raw inbox issues to Linear/Codex
+        if: steps.should-run.outputs.run == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          LINEAR_TEAM_ID: ${{ secrets.LINEAR_TEAM_ID }}
+          LINEAR_TEAM_KEY: ${{ secrets.LINEAR_TEAM_KEY }}
+          LINEAR_CODEX_PROMPT: ${{ vars.LINEAR_CODEX_PROMPT }}
+        run: node scripts/send-raw-inbox-to-linear.mjs
+
       - name: Import raw inbox issues
         if: steps.should-run.outputs.run == 'true'
         env:

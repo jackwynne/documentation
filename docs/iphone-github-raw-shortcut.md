@@ -148,12 +148,15 @@ It runs on GitHub when an issue is opened, edited, labeled, or reopened. It also
 For open issues labeled `raw-inbox`, it:
 
 - ensures the `raw-inbox` and `raw-imported` labels exist
+- optionally sends the issue to Linear and mentions `@Codex`, when Linear secrets are configured
 - writes each issue to `raw/inbox`
 - force-adds the imported Markdown files even though `raw/` is normally ignored locally
 - commits the imported files to the repository
 - adds `raw-imported` and removes `raw-inbox` from imported issues
 
 This intentionally publishes imported captures in Git. Use this only for material that is safe to make public.
+
+For the Linear/Codex setup, see `docs/linear-codex-raw-inbox.md`.
 
 ## Optional Codex App Automation
 

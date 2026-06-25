@@ -8,7 +8,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "raw:import-github": "node scripts/import-github-raw-inbox.mjs"
+    "raw:import-github": "node scripts/import-github-raw-inbox.mjs",
+    "raw:send-linear": "node scripts/send-raw-inbox-to-linear.mjs"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.40.0",
