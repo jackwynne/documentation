@@ -6,7 +6,7 @@ lang: en
 
 ## New Spark Project Code
 
-### All the imports and UDFs togther:
+### All the imports and UDFs together:
 
 ```python
 from pyspark.sql.functions import sum, max, min, first, when, col, lag, lead, count, lit, month, year, to_date, concat_ws, last_day, row_number, desc_nulls_last, substring_index

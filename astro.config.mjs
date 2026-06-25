@@ -22,12 +22,27 @@ export default defineConfig({
       ],
       sidebar: [
         {
-          label: "Power BI",
+          label: "Microsoft Fabric",
           items: [
             {
-              autogenerate: {
-                directory: "powerbi",
-              },
+              label: "Power BI",
+              items: [
+                {
+                  autogenerate: {
+                    directory: "fabric/power-bi",
+                  },
+                },
+              ],
+            },
+            {
+              label: "Notebooks",
+              items: [
+                {
+                  autogenerate: {
+                    directory: "fabric/notebooks",
+                  },
+                },
+              ],
             },
           ],
         },
@@ -47,16 +62,6 @@ export default defineConfig({
             {
               autogenerate: {
                 directory: "windows",
-              },
-            },
-          ],
-        },
-        {
-          label: "Spark",
-          items: [
-            {
-              autogenerate: {
-                directory: "spark",
               },
             },
           ],
