@@ -3,3 +3,22 @@
 @import '@astrojs/starlight-tailwind';
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
+
+.home-card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.home-card-grid .card .title .icon,
+.home-card-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+  border: 1px solid var(--sl-card-border);
+  background-color: var(--sl-card-bg);
+  padding: 0.45rem;
+  border-radius: 0.25rem;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}

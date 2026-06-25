@@ -27,27 +27,29 @@ import { LinkCard, Card, CardGrid } from "@astrojs/starlight/components";
 
 ## Sections
 
-<CardGrid>
-  <Card title="Microsoft Fabric" icon="pencil">
-    Power BI code blocks, activity logs, Spark project code and Shape Maps
-    <LinkCard
-      title="Power BI Docs"
-      href="/fabric/power-bi/reading-multiple-csv-or-excel-files/"
-    />
-    <LinkCard title="Notebook Docs" href="/fabric/notebooks/new-project-code/" />
-  </Card>
-  <Card title="Azure" icon="seti:azure">
-    Working in Azure
-    <LinkCard
-      title="Azure Docs"
-      href="/azure/01-functions-monorepo-deploy-github/"
-    />
-  </Card>
-  <Card title="Windows" icon="seti:windows">
-    Setup WSL and other Windows tips
-    <LinkCard title="Windows Docs" href="/windows/01-wsl/" />
-  </Card>
-</CardGrid>
+<div class="home-card-grid">
+  <CardGrid>
+    <Card title='<span class="home-card-title"><img class="home-card-icon" src="/icons/microsoft-fabric.svg" alt="" />Microsoft Fabric</span>'>
+      Power BI code blocks, activity logs, Spark project code and Shape Maps
+      <LinkCard
+        title="Power BI Docs"
+        href="/fabric/power-bi/reading-multiple-csv-or-excel-files/"
+      />
+      <LinkCard title="Notebook Docs" href="/fabric/notebooks/new-project-code/" />
+    </Card>
+    <Card title='<span class="home-card-title"><img class="home-card-icon" src="/icons/azure.svg" alt="" />Azure</span>'>
+      Working in Azure
+      <LinkCard
+        title="Azure Docs"
+        href="/azure/01-functions-monorepo-deploy-github/"
+      />
+    </Card>
+    <Card title="Windows" icon="seti:windows">
+      Setup WSL and other Windows tips
+      <LinkCard title="Windows Docs" href="/windows/01-wsl/" />
+    </Card>
+  </CardGrid>
+</div>
 
 {/* ## Next steps
 
