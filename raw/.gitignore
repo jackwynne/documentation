@@ -1,0 +1,7 @@
+# Keep this workspace available while avoiding accidental commits of private notes.
+*
+!.gitignore
+!README.md
+!projects/
+!projects/documentation-site/
+!projects/documentation-site/AGENTS.md
