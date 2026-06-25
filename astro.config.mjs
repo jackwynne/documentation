@@ -24,7 +24,7 @@ export default defineConfig({
       ],
       sidebar: [
         {
-          label: "Power BI",
+          label: "Microsoft Fabric",
           autogenerate: {
             directory: "powerbi",
           },
