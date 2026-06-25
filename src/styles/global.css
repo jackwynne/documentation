@@ -10,14 +10,15 @@
   gap: 1rem;
 }
 
+.home-card-grid .card .title .icon,
 .home-card-icon {
-  width: 1.333em;
-  height: 1.333em;
+  width: 2.5rem;
+  height: 2.5rem;
   object-fit: contain;
   border: 1px solid var(--sl-card-border);
   background-color: var(--sl-card-bg);
-  padding: 0.2em;
+  padding: 0.45rem;
   border-radius: 0.25rem;
-  box-sizing: content-box;
+  box-sizing: border-box;
   flex-shrink: 0;
 }
