@@ -9,8 +9,8 @@ Use this skill to import GitHub issues labeled `raw-inbox` into local Markdown n
 
 ## Requirements
 
-- A GitHub token must be available as `GITHUB_TOKEN` or `GH_TOKEN`.
-- The token should have Issues read/write access for this repository.
+- GitHub auth must be available through `GITHUB_TOKEN`, `GH_TOKEN`, or the active GitHub CLI login.
+- The auth token should have Issues read/write access for this repository.
 - The iPhone Shortcut should create issues labeled `raw-inbox`.
 
 ## Commands

@@ -1,0 +1,70 @@
+name: Raw inbox import
+
+on:
+  issues:
+    types:
+      - opened
+      - edited
+      - labeled
+      - reopened
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: raw-inbox-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    name: Import raw inbox issues
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Decide whether to run
+        id: should-run
+        uses: actions/github-script@v8
+        with:
+          script: |
+            if (context.eventName === "schedule" || context.eventName === "workflow_dispatch") {
+              core.setOutput("run", "true");
+              return;
+            }
+
+            const issue = context.payload.issue;
+            const labels = issue?.labels?.map((label) => typeof label === "string" ? label : label.name) || [];
+            core.setOutput("run", labels.includes("raw-inbox") ? "true" : "false");
+
+      - name: Checkout
+        if: steps.should-run.outputs.run == 'true'
+        uses: actions/checkout@v5
+
+      - name: Import raw inbox issues
+        if: steps.should-run.outputs.run == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/import-github-raw-inbox.mjs --ensure-labels --mark-imported
+
+      - name: Commit imported captures
+        if: steps.should-run.outputs.run == 'true'
+        run: |
+          if [ ! -d raw/inbox ]; then
+            echo "No raw/inbox directory created."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f raw/inbox
+
+          if git diff --cached --quiet; then
+            echo "No imported captures to commit."
+            exit 0
+          fi
+
+          git commit -m "Import raw inbox captures"
+          git push

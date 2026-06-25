@@ -16,10 +16,10 @@ if (args.help) {
   process.exit(0);
 }
 
-const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || getGitHubCliToken();
 
 if (!token) {
-  fail("Missing GITHUB_TOKEN or GH_TOKEN. Use a fine-grained GitHub token with issue read/write access for this repository.");
+  fail("Missing GitHub auth. Set GITHUB_TOKEN/GH_TOKEN, or run `gh auth login` with issue read/write access for this repository.");
 }
 
 const repo = args.repo || process.env.GITHUB_REPOSITORY || inferRepoFromGitRemote();
@@ -128,7 +128,10 @@ function printHelp() {
   console.log(`Import GitHub issues labeled "${DEFAULT_LABEL}" into raw/inbox.
 
 Usage:
-  GITHUB_TOKEN=... pnpm raw:import-github [options]
+  pnpm raw:import-github [options]
+
+Authentication:
+  Uses GITHUB_TOKEN, GH_TOKEN, or the active GitHub CLI login from gh auth token.
 
 Options:
   --repo owner/repo           Repository to import from. Defaults to GITHUB_REPOSITORY or git remote origin.
@@ -157,6 +160,19 @@ function inferRepoFromGitRemote() {
   const remote = result.stdout.trim();
   const httpsMatch = remote.match(/github\.com[:/](?<repo>[^/]+\/[^/.]+)(?:\.git)?$/);
   return httpsMatch?.groups?.repo || null;
+}
+
+function getGitHubCliToken() {
+  const result = spawnSync("gh", ["auth", "token"], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+
+  if (result.status !== 0) {
+    return null;
+  }
+
+  return result.stdout.trim() || null;
 }
 
 function issueFileName(issue) {

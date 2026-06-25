@@ -26,6 +26,8 @@ raw/
   archive/
 ```
 
-Actual notes under this workspace are ignored by Git by default. Keep only durable instructions and safe scaffolding tracked.
+Actual notes under this workspace are ignored by Git by default. Keep only durable instructions and safe scaffolding tracked from local work.
+
+The GitHub Actions raw-inbox importer intentionally force-adds files under `raw/inbox` when importing public article captures from GitHub issues.
 
 When material is ready to publish, ask Codex to use the `publish-note` skill to turn it into a reviewed Starlight page under `src/content/docs/`.

@@ -43,7 +43,7 @@ Store the token only inside the iOS Shortcut. Do not commit it to this repositor
 From this repository on your Mac:
 
 ```bash
-GITHUB_TOKEN=your_token pnpm raw:import-github --ensure-labels
+pnpm raw:import-github --ensure-labels
 ```
 
 This creates:
@@ -128,20 +128,38 @@ Shared content:
 Preview:
 
 ```bash
-GITHUB_TOKEN=your_token pnpm raw:import-github --dry-run
+pnpm raw:import-github --dry-run
 ```
 
 Import:
 
 ```bash
-GITHUB_TOKEN=your_token pnpm raw:import-github --mark-imported
+pnpm raw:import-github --mark-imported
 ```
 
 Imported notes are written to `raw/inbox` and ignored by Git by default.
 
-## Optional Codex Automation
+## Always-On GitHub Automation
 
-After the Shortcut is working and a GitHub token is available to Codex automations, create a local workspace automation for this repository.
+This repository includes a GitHub Actions workflow at `.github/workflows/raw-inbox-import.yml`.
+
+It runs on GitHub when an issue is opened, edited, labeled, or reopened. It also runs hourly and can be started manually from the Actions tab. It works even when your laptop is off.
+
+For open issues labeled `raw-inbox`, it:
+
+- ensures the `raw-inbox` and `raw-imported` labels exist
+- writes each issue to `raw/inbox`
+- force-adds the imported Markdown files even though `raw/` is normally ignored locally
+- commits the imported files to the repository
+- adds `raw-imported` and removes `raw-inbox` from imported issues
+
+This intentionally publishes imported captures in Git. Use this only for material that is safe to make public.
+
+## Optional Codex App Automation
+
+Codex app automations are local project automations. They require your Codex host machine to be awake, online, and able to access this project.
+
+After the Shortcut is working and GitHub auth is available to Codex app automations, create a local workspace automation for this repository.
 
 Suggested schedule:
 
@@ -152,7 +170,7 @@ Suggested prompt:
 ```text
 Use the import-github-inbox skill to import GitHub issues labeled raw-inbox into raw/inbox for this repository.
 
-First check whether GITHUB_TOKEN or GH_TOKEN is available. If no token is available, report that setup is missing and do not make changes.
+First check whether GitHub auth is available through GITHUB_TOKEN, GH_TOKEN, or the active GitHub CLI login. If no auth is available, report that setup is missing and do not make changes.
 
 If a token is available, run:
 
