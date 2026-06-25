@@ -25,9 +25,24 @@ export default defineConfig({
           label: "Microsoft Fabric",
           items: [
             {
-              autogenerate: {
-                directory: "powerbi",
-              },
+              label: "Power BI",
+              items: [
+                {
+                  autogenerate: {
+                    directory: "fabric/power-bi",
+                  },
+                },
+              ],
+            },
+            {
+              label: "Notebooks",
+              items: [
+                {
+                  autogenerate: {
+                    directory: "fabric/notebooks",
+                  },
+                },
+              ],
             },
           ],
         },
