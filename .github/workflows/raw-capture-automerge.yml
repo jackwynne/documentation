@@ -73,15 +73,21 @@ jobs:
           gh pr edit "$PR_NUMBER" --remove-label raw-automerge || true
 
           if [ "$BUILD_OUTCOME" = "failure" ]; then
-            body="# Raw Capture Validation Failed
+            body="$(cat <<'REPORT'
+          # Raw Capture Validation Failed
 
-- The site build failed. Review the workflow logs for details."
+          - The site build failed. Review the workflow logs for details.
+          REPORT
+          )"
           elif [ -f "$REPORT_FILE" ]; then
             body="$(cat "$REPORT_FILE")"
           else
-            body="# Raw Capture Validation Failed
+            body="$(cat <<'REPORT'
+          # Raw Capture Validation Failed
 
-- The site build failed. Review the workflow logs for details."
+          - The validation workflow failed before writing a detailed report. Review the workflow logs for details.
+          REPORT
+          )"
           fi
 
           gh pr comment "$PR_NUMBER" --body "$body"
