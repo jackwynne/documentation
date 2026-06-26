@@ -66,6 +66,16 @@ export default defineConfig({
             },
           ],
         },
+        {
+          label: "Captures",
+          items: [
+            {
+              autogenerate: {
+                directory: "captures",
+              },
+            },
+          ],
+        },
       ],
 
       customCss: [

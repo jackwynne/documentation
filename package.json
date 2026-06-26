@@ -7,7 +7,11 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "raw:import-github": "node scripts/import-github-raw-inbox.mjs",
+    "raw:create-pr": "node scripts/create-raw-capture-pr.mjs",
+    "raw:validate-pr": "node scripts/validate-capture-pr.mjs",
+    "raw:send-linear": "node scripts/send-raw-inbox-to-linear.mjs"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.40.0",

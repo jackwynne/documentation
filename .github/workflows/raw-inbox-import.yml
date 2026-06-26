@@ -1,0 +1,67 @@
+name: Raw inbox capture PR
+
+on:
+  issues:
+    types:
+      - opened
+      - edited
+      - labeled
+      - reopened
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: raw-inbox-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  create-pr:
+    name: Create raw capture PR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Decide whether to run
+        id: should-run
+        uses: actions/github-script@v8
+        with:
+          script: |
+            if (context.eventName === "schedule" || context.eventName === "workflow_dispatch") {
+              core.setOutput("run", "true");
+              return;
+            }
+
+            const issue = context.payload.issue;
+            const labels = issue?.labels?.map((label) => typeof label === "string" ? label : label.name) || [];
+            core.setOutput("run", labels.includes("raw-inbox") && !labels.includes("raw-pr-created") ? "true" : "false");
+
+      - name: Checkout
+        if: steps.should-run.outputs.run == 'true'
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        if: steps.should-run.outputs.run == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Create capture PR
+        if: steps.should-run.outputs.run == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          args="--ensure-labels"
+
+          if [ -n "$ISSUE_NUMBER" ]; then
+            args="$args --issue-number $ISSUE_NUMBER"
+          fi
+
+          node scripts/create-raw-capture-pr.mjs $args

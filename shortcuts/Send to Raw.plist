@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>WFWorkflowClientVersion</key>
+	<string>1307.0.4</string>
+	<key>WFWorkflowClientRelease</key>
+	<string>3.0</string>
+	<key>WFWorkflowMinimumClientVersion</key>
+	<integer>900</integer>
+	<key>WFWorkflowMinimumClientVersionString</key>
+	<string>900</string>
+	<key>WFWorkflowIcon</key>
+	<dict>
+		<key>WFWorkflowIconStartColor</key>
+		<integer>4274264319</integer>
+		<key>WFWorkflowIconGlyphNumber</key>
+		<integer>59511</integer>
+	</dict>
+	<key>WFWorkflowTypes</key>
+	<array>
+		<string>ActionExtension</string>
+	</array>
+	<key>WFWorkflowInputContentItemClasses</key>
+	<array>
+		<string>WFURLContentItem</string>
+		<string>WFStringContentItem</string>
+		<string>WFSafariWebPageContentItem</string>
+		<string>WFRichTextContentItem</string>
+	</array>
+	<key>WFWorkflowActions</key>
+	<array>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Send shared URLs, Safari pages, or selected text to GitHub as a raw-inbox issue. After import, replace PASTE_FINE_GRAINED_GITHUB_TOKEN_HERE in the Get Contents of URL action Authorization header with your GitHub token.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>11111111-1111-1111-1111-111111111111</string>
+				<key>WFTextActionText</key>
+				<dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>Captured from iPhone share sheet.
+
+Shared content:
+￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{51, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>ExtensionInput</string>
+							</dict>
+						</dict>
+					</dict>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.downloadurl</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFURL</key>
+				<string>https://api.github.com/repos/jackwynne/Documentation/issues</string>
+				<key>WFHTTPMethod</key>
+				<string>POST</string>
+				<key>WFHTTPHeaders</key>
+				<dict>
+					<key>Accept</key>
+					<string>application/vnd.github+json</string>
+					<key>Authorization</key>
+					<string>Bearer PASTE_FINE_GRAINED_GITHUB_TOKEN_HERE</string>
+					<key>X-GitHub-Api-Version</key>
+					<string>2022-11-28</string>
+				</dict>
+				<key>WFHTTPBodyType</key>
+				<string>JSON</string>
+				<key>WFJSONValues</key>
+				<dict>
+					<key>title</key>
+					<string>Raw capture</string>
+					<key>body</key>
+					<dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenString</string>
+						<key>Value</key>
+						<dict>
+							<key>string</key>
+							<string>￼</string>
+							<key>attachmentsByRange</key>
+							<dict>
+								<key>{0, 1}</key>
+								<dict>
+									<key>Type</key>
+									<string>ActionOutput</string>
+									<key>OutputUUID</key>
+									<string>11111111-1111-1111-1111-111111111111</string>
+									<key>OutputName</key>
+									<string>Text</string>
+								</dict>
+							</dict>
+						</dict>
+					</dict>
+					<key>labels</key>
+					<array>
+						<string>raw-inbox</string>
+					</array>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.notification</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFNotificationActionTitle</key>
+				<string>Saved to Raw</string>
+				<key>WFNotificationActionBody</key>
+				<string>Created a GitHub raw-inbox issue.</string>
+			</dict>
+		</dict>
+	</array>
+</dict>
+</plist>

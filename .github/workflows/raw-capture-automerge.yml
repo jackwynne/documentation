@@ -1,0 +1,120 @@
+name: Raw capture validation and merge
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: raw-capture-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate raw capture PR
+    if: contains(github.event.pull_request.labels.*.name, 'raw-capture')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+
+    steps:
+      - name: Checkout pull request head
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate capture content
+        id: validate
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RAW_CAPTURE_VALIDATION_REPORT: ${{ runner.temp }}/raw-capture-validation.md
+        run: node scripts/validate-capture-pr.mjs
+
+      - name: Build site
+        id: build
+        if: steps.validate.outcome == 'success'
+        continue-on-error: true
+        run: pnpm build
+
+      - name: Route validation failure
+        if: steps.validate.outcome == 'failure' || steps.build.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPORT_FILE: ${{ runner.temp }}/raw-capture-validation.md
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+        run: |
+          gh pr edit "$PR_NUMBER" --add-label raw-needs-review || true
+          gh pr edit "$PR_NUMBER" --remove-label raw-automerge || true
+
+          if [ "$BUILD_OUTCOME" = "failure" ]; then
+            body="$(cat <<'REPORT'
+          # Raw Capture Validation Failed
+
+          - The site build failed. Review the workflow logs for details.
+          REPORT
+          )"
+          elif [ -f "$REPORT_FILE" ]; then
+            body="$(cat "$REPORT_FILE")"
+          else
+            body="$(cat <<'REPORT'
+          # Raw Capture Validation Failed
+
+          - The validation workflow failed before writing a detailed report. Review the workflow logs for details.
+          REPORT
+          )"
+          fi
+
+          gh pr comment "$PR_NUMBER" --body "$body"
+
+      - name: Fail validation job
+        if: steps.validate.outcome == 'failure' || steps.build.outcome == 'failure'
+        run: exit 1
+
+  automerge:
+    name: Merge safe raw capture PR
+    needs: validate
+    if: contains(github.event.pull_request.labels.*.name, 'raw-capture') && contains(github.event.pull_request.labels.*.name, 'raw-automerge')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Merge pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RAW_CAPTURE_MERGE_MODE: ${{ vars.RAW_CAPTURE_MERGE_MODE }}
+        run: |
+          if [ "$RAW_CAPTURE_MERGE_MODE" = "auto" ]; then
+            gh pr merge "$PR_NUMBER" --squash --auto --delete-branch --match-head-commit "$HEAD_SHA"
+          else
+            gh pr merge "$PR_NUMBER" --squash --delete-branch --match-head-commit "$HEAD_SHA"
+          fi
