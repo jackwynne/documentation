@@ -1,8 +1,8 @@
 # Linear + Codex Raw Inbox
 
-This optional setup lets GitHub Actions mirror `raw-inbox` GitHub issues into Linear and mention `@Codex` in a Linear comment.
+This optional legacy setup lets GitHub Actions mirror `raw-inbox` GitHub issues into Linear and mention `@Codex` in a Linear comment.
 
-The goal is to use Codex cloud through your ChatGPT/Codex plan instead of calling the OpenAI API from GitHub Actions.
+The preferred workflow is now the GitHub PR + `@codex` path documented in `docs/iphone-github-raw-shortcut.md`. Keep this Linear path only as a fallback or reference.
 
 ## How It Works
 
@@ -15,7 +15,7 @@ iPhone Shortcut
   -> Codex cloud task through the Linear integration
 ```
 
-The GitHub Action still imports the raw capture into `raw/inbox` and commits it to this repository.
+The current preferred GitHub Action does not send captures to Linear. It creates a capture branch and pull request, then comments `@codex` on that pull request.
 
 ## Required External Setup
 
@@ -70,7 +70,7 @@ List current `raw-inbox` issues and send unsent ones to Linear:
 LINEAR_API_KEY=... LINEAR_TEAM_KEY=RAW pnpm raw:send-linear
 ```
 
-Then import captures locally:
+Then import captures locally with the legacy importer:
 
 ```bash
 pnpm raw:import-github --mark-imported

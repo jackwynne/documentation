@@ -1,6 +1,6 @@
 # iPhone Share Shortcut for Raw Captures
 
-This setup lets you capture an article, URL, or selected text from the iPhone share sheet into GitHub issues labeled `raw-inbox`. Codex can then import those issues into `raw/inbox`.
+This setup lets you capture an article, URL, or selected text from the iPhone share sheet into GitHub issues labeled `raw-inbox`. GitHub Actions then opens a pull request, asks Codex to summarize the capture, and auto-merges only PRs that pass the raw capture validation gates.
 
 ## Importable Apple Shortcut
 
@@ -43,13 +43,19 @@ Store the token only inside the iOS Shortcut. Do not commit it to this repositor
 From this repository on your Mac:
 
 ```bash
-pnpm raw:import-github --ensure-labels
+pnpm raw:create-pr --ensure-labels --dry-run
 ```
 
-This creates:
+The GitHub Actions workflow creates these labels when it runs:
 
 - `raw-inbox`
-- `raw-imported`
+- `raw-pr-created`
+- `raw-codex-pending`
+- `raw-needs-review`
+- `raw-processed`
+- `raw-sensitive`
+- `raw-capture`
+- `raw-automerge`
 
 ## Working Shortcut
 
@@ -123,21 +129,21 @@ Shared content:
 [original share-sheet input]
 ```
 
-## Import Captures
+## Preview Capture PR Creation
 
 Preview:
 
 ```bash
-pnpm raw:import-github --dry-run
+pnpm raw:create-pr --dry-run
 ```
 
-Import:
+Create pull requests for open `raw-inbox` issues:
 
 ```bash
-pnpm raw:import-github --mark-imported
+pnpm raw:create-pr --ensure-labels
 ```
 
-Imported notes are written to `raw/inbox` and ignored by Git by default.
+The script creates one branch and pull request per capture. Raw notes are written to `raw/inbox` on those capture branches and are ignored by Git locally by default.
 
 ## Always-On GitHub Automation
 
@@ -147,16 +153,17 @@ It runs on GitHub when an issue is opened, edited, labeled, or reopened. It also
 
 For open issues labeled `raw-inbox`, it:
 
-- ensures the `raw-inbox` and `raw-imported` labels exist
-- optionally sends the issue to Linear and mentions `@Codex`, when Linear secrets are configured
-- writes each issue to `raw/inbox`
-- force-adds the imported Markdown files even though `raw/` is normally ignored locally
-- commits the imported files to the repository
-- adds `raw-imported` and removes `raw-inbox` from imported issues
+- ensures the raw capture workflow labels exist
+- creates a branch named `capture/issue-<number>-<slug>`
+- writes the issue to `raw/inbox` on that branch
+- opens a pull request against `main`
+- labels the pull request `raw-capture`, `raw-codex-pending`, and `raw-automerge`
+- comments on the pull request with the Codex raw-capture prompt and `@codex`
+- adds `raw-pr-created` to the issue and removes `raw-inbox`
 
-This intentionally publishes imported captures in Git. Use this only for material that is safe to make public.
+The Codex prompt asks Codex to create or update one generated summary folder under `src/content/docs/captures/<capture-slug>/`. Safe summary PRs are validated by `.github/workflows/raw-capture-automerge.yml`, built with `pnpm build`, and merged automatically. Unsafe or ambiguous PRs are labeled `raw-needs-review` and left open.
 
-For the Linear/Codex setup, see `docs/linear-codex-raw-inbox.md`.
+This workflow intentionally publishes imported captures and summaries in Git after validation. Use it only for material that is safe to make public. The older Linear/Codex setup is still documented as an optional reference path in `docs/linear-codex-raw-inbox.md`.
 
 ## Optional Codex App Automation
 
@@ -171,13 +178,13 @@ Suggested schedule:
 Suggested prompt:
 
 ```text
-Use the import-github-inbox skill to import GitHub issues labeled raw-inbox into raw/inbox for this repository.
+Create raw capture pull requests for GitHub issues labeled raw-inbox in this repository.
 
 First check whether GitHub auth is available through GITHUB_TOKEN, GH_TOKEN, or the active GitHub CLI login. If no auth is available, report that setup is missing and do not make changes.
 
 If a token is available, run:
 
-pnpm raw:import-github --mark-imported
+pnpm raw:create-pr --ensure-labels
 
-Report imported files, skipped issues, and any GitHub issue updates. Do not publish imported captures into src/content/docs unless explicitly requested.
+Report created PRs, skipped issues, and any GitHub issue updates. Do not publish imported captures into src/content/docs directly; let the PR workflow and validation gates handle generated summaries.
 ```

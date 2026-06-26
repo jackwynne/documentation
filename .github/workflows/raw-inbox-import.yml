@@ -1,4 +1,4 @@
-name: Raw inbox import
+name: Raw inbox capture PR
 
 on:
   issues:
@@ -14,14 +14,15 @@ on:
 permissions:
   contents: write
   issues: write
+  pull-requests: write
 
 concurrency:
-  group: raw-inbox-import
+  group: raw-inbox-${{ github.event.issue.number || github.run_id }}
   cancel-in-progress: false
 
 jobs:
-  import:
-    name: Import raw inbox issues
+  create-pr:
+    name: Create raw capture PR
     runs-on: ubuntu-latest
 
     steps:
@@ -37,44 +38,30 @@ jobs:
 
             const issue = context.payload.issue;
             const labels = issue?.labels?.map((label) => typeof label === "string" ? label : label.name) || [];
-            core.setOutput("run", labels.includes("raw-inbox") ? "true" : "false");
+            core.setOutput("run", labels.includes("raw-inbox") && !labels.includes("raw-pr-created") ? "true" : "false");
 
       - name: Checkout
         if: steps.should-run.outputs.run == 'true'
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
-      - name: Send raw inbox issues to Linear/Codex
+      - name: Set up Node
+        if: steps.should-run.outputs.run == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Create capture PR
         if: steps.should-run.outputs.run == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
-          LINEAR_TEAM_ID: ${{ secrets.LINEAR_TEAM_ID }}
-          LINEAR_TEAM_KEY: ${{ secrets.LINEAR_TEAM_KEY }}
-          LINEAR_CODEX_PROMPT: ${{ vars.LINEAR_CODEX_PROMPT }}
-        run: node scripts/send-raw-inbox-to-linear.mjs
-
-      - name: Import raw inbox issues
-        if: steps.should-run.outputs.run == 'true'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: node scripts/import-github-raw-inbox.mjs --ensure-labels --mark-imported
-
-      - name: Commit imported captures
-        if: steps.should-run.outputs.run == 'true'
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
-          if [ ! -d raw/inbox ]; then
-            echo "No raw/inbox directory created."
-            exit 0
+          args="--ensure-labels"
+
+          if [ -n "$ISSUE_NUMBER" ]; then
+            args="$args --issue-number $ISSUE_NUMBER"
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f raw/inbox
-
-          if git diff --cached --quiet; then
-            echo "No imported captures to commit."
-            exit 0
-          fi
-
-          git commit -m "Import raw inbox captures"
-          git push
+          node scripts/create-raw-capture-pr.mjs $args
