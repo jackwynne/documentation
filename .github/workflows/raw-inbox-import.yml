@@ -16,6 +16,9 @@ permissions:
   issues: write
   pull-requests: write
 
+env:
+  NODE_VERSION: 24
+
 concurrency:
   group: raw-inbox-${{ github.event.issue.number || github.run_id }}
   cancel-in-progress: false
@@ -42,15 +45,16 @@ jobs:
 
       - name: Checkout
         if: steps.should-run.outputs.run == 'true'
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Set up Node
         if: steps.should-run.outputs.run == 'true'
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
 
       - name: Create capture PR
         if: steps.should-run.outputs.run == 'true'
