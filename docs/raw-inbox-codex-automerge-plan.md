@@ -58,17 +58,18 @@ Relevant platform behavior:
 | Done | iPhone Shortcut can create GitHub issues labeled `raw-inbox`. | `docs/iphone-github-raw-shortcut.md`, `shortcuts/Send to Raw.shortcut` |
 | Done | Import script can convert `raw-inbox` issues to Markdown files. | `scripts/import-github-raw-inbox.mjs` |
 | Done | Existing GitHub Action runs on issue events, schedule, and manual dispatch. | `.github/workflows/raw-inbox-import.yml` |
-| Done | Existing Action can commit imported raw captures. | `.github/workflows/raw-inbox-import.yml` |
-| Done | Optional Linear handoff exists. | `scripts/send-raw-inbox-to-linear.mjs`, `docs/linear-codex-raw-inbox.md` |
-| Not done | Replace Linear handoff with GitHub PR + `@codex` handoff. | Planned here |
-| Not done | Create one branch and PR per capture. | Planned here |
-| Not done | Add a Codex prompt file/template for capture processing. | Planned here |
-| Not done | Add capture taxonomy for stable categorization. | Planned here |
-| Not done | Add generated `Captures` section to Starlight sidebar. | Planned here |
-| Not done | Add content validation gate for Codex-generated pages. | Planned here |
-| Not done | Add guarded auto-merge workflow. | Planned here |
-| Not done | Add duplicate detection and update-by-canonical-URL behavior. | Planned here |
-| Not done | Add sensitive-content fallback path. | Planned here |
+| Done | Direct-to-main raw capture commits have been replaced by PR creation. | `.github/workflows/raw-inbox-import.yml`, `scripts/create-raw-capture-pr.mjs` |
+| Done | Optional Linear handoff exists and is de-emphasized as a legacy path. | `scripts/send-raw-inbox-to-linear.mjs`, `docs/linear-codex-raw-inbox.md` |
+| Done | Replace Linear handoff with GitHub PR + `@codex` handoff. | `.github/workflows/raw-inbox-import.yml`, `.github/codex/prompts/process-raw-capture.md` |
+| Done | Create one branch and PR per capture. | `scripts/create-raw-capture-pr.mjs` |
+| Done | Add a Codex prompt file/template for capture processing. | `.github/codex/prompts/process-raw-capture.md` |
+| Done | Add capture taxonomy for stable categorization. | `docs/capture-taxonomy.md` |
+| Done | Add generated `Captures` section to Starlight sidebar. | `astro.config.mjs`, `src/content/docs/captures/index.md` |
+| Done | Add content validation gate for Codex-generated pages. | `scripts/validate-capture-pr.mjs` |
+| Done | Add guarded auto-merge workflow. | `.github/workflows/raw-capture-automerge.yml` |
+| Done | Add duplicate detection and update-by-canonical-URL behavior. | `scripts/create-raw-capture-pr.mjs` |
+| Done | Add sensitive-content fallback path. | `.github/codex/prompts/process-raw-capture.md`, `scripts/validate-capture-pr.mjs`, `.github/workflows/raw-capture-automerge.yml` |
+| Not done | Prove the live GitHub issue -> Codex cloud -> auto-merge loop with a real public capture. | Requires an end-to-end GitHub/Codex integration run. |
 
 ## Recommended File Changes
 
@@ -94,7 +95,7 @@ Recommended initial categories:
 - `research`
 - `personal-workflow`
 
-Status: Not done.
+Status: Done.
 
 ### 2. Add a Codex Prompt Template
 
@@ -121,7 +122,7 @@ Required prompt behavior:
   personally identifying, do not publish a Starlight page
 - run `pnpm build`
 
-Status: Not done.
+Status: Done.
 
 ### 3. Replace the Existing Issue Import Workflow
 
@@ -147,7 +148,7 @@ Recommended behavior:
 9. Comment on the PR with the Codex prompt and `@codex`.
 10. Add `raw-pr-created` to the issue and remove `raw-inbox`.
 
-Status: Not done.
+Status: Done.
 
 ### 4. Add a PR Creation Script
 
@@ -168,7 +169,7 @@ Responsibilities:
   update the existing capture folder instead of creating a new page
 - mutate labels only after PR creation succeeds
 
-Status: Not done.
+Status: Done.
 
 ### 5. Add Starlight Captures Section
 
@@ -189,7 +190,7 @@ Update `astro.config.mjs` sidebar with a generated captures section:
 
 This makes merged summaries easy to browse as well as searchable.
 
-Status: Not done.
+Status: Done.
 
 ### 6. Add Content Validation Script
 
@@ -245,7 +246,7 @@ Validation requirements:
 - block copied article dumps by enforcing a reasonable maximum page length
 - fail if the page contains a large exact copy of the raw issue body
 
-Status: Not done.
+Status: Done.
 
 ### 7. Add Guarded Auto-Merge Workflow
 
@@ -284,7 +285,7 @@ wait for GitHub requirements:
 gh pr merge "$PR_NUMBER" --squash --auto --delete-branch --match-head-commit "$HEAD_SHA"
 ```
 
-Status: Not done.
+Status: Done.
 
 ### 8. Add Failure Routing
 
@@ -302,7 +303,7 @@ When Codex decides not to publish because the capture is sensitive:
 - leave the raw file in `raw/inbox`
 - leave a PR comment explaining why no public page was created
 
-Status: Not done.
+Status: Done.
 
 ### 9. Update iPhone Workflow Documentation
 
@@ -317,14 +318,14 @@ New documented behavior should say:
 - safe summary PRs auto-merge
 - unsafe or ambiguous PRs stay open for review
 
-Status: Not done.
+Status: Done.
 
 ### 10. Remove or De-emphasize Linear
 
 Keep the Linear docs/script for reference, but mark the GitHub PR + `@codex`
 path as the preferred workflow.
 
-Status: Not done.
+Status: Done.
 
 ## Suggested Implementation Order
 
