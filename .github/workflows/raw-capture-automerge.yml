@@ -13,6 +13,9 @@ permissions:
   contents: read
   pull-requests: read
 
+env:
+  NODE_VERSION: 24
+
 concurrency:
   group: raw-capture-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -29,19 +32,20 @@ jobs:
 
     steps:
       - name: Checkout pull request head
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Set up Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          package-manager-cache: false
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
 
-      - name: Enable pnpm
-        run: corepack enable
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
