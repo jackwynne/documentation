@@ -29,8 +29,10 @@ The PR should auto-merge only after Codex has pushed the summary page and a
 separate validation workflow confirms that:
 
 - only approved content paths changed
-- the published page is Markdown, not MDX
+- the published page is Markdown or MDX
 - the page has required Starlight frontmatter
+- images and code blocks are allowed when they are part of the generated
+  capture folder
 - the page is a summary, not a copied article body
 - the content does not look private, sensitive, or paywalled
 - `pnpm build` passes
@@ -65,7 +67,7 @@ Relevant platform behavior:
 | Not done | Add generated `Captures` section to Starlight sidebar. | Planned here |
 | Not done | Add content validation gate for Codex-generated pages. | Planned here |
 | Not done | Add guarded auto-merge workflow. | Planned here |
-| Not done | Add duplicate detection by canonical URL. | Planned here |
+| Not done | Add duplicate detection and update-by-canonical-URL behavior. | Planned here |
 | Not done | Add sensitive-content fallback path. | Planned here |
 
 ## Recommended File Changes
@@ -101,8 +103,13 @@ Create `.github/codex/prompts/process-raw-capture.md`.
 Required prompt behavior:
 
 - read the raw capture file and linked source when available
-- create one concise Markdown summary under `src/content/docs/captures/`
-- use only Markdown, not MDX
+- create or update one capture folder under
+  `src/content/docs/captures/<capture-slug>/`
+- use `index.md` by default, or `index.mdx` when MDX is useful for the summary
+- allow fenced code blocks when they help summarize technical content
+- allow images when they are relevant to the summary and stored in the same
+  capture folder, for example
+  `src/content/docs/captures/<capture-slug>/images/<image-name>.<ext>`
 - include frontmatter with `title`, `description`, `source_url`,
   `source_type`, `captured_at`, `topics`, `tags`, `raw_issue`, and
   `publish_status`
@@ -157,6 +164,8 @@ Responsibilities:
 - create/push a branch
 - create the PR through GitHub CLI or GitHub REST
 - post the `@codex` comment
+- when a duplicate `source_url` already exists, create a PR that asks Codex to
+  update the existing capture folder instead of creating a new page
 - mutate labels only after PR creation succeeds
 
 Status: Not done.
@@ -190,9 +199,24 @@ Validation requirements:
 
 - changed files are limited to:
   - `raw/inbox/*.md`
-  - `src/content/docs/captures/*.md`
-- no `.mdx` files in captures
-- at least one `src/content/docs/captures/*.md` file exists
+  - `src/content/docs/captures/<capture-slug>/**`
+- each generated capture must live in its own folder under
+  `src/content/docs/captures/`
+- each capture folder must contain exactly one primary page:
+  - `index.md`
+  - or `index.mdx`
+- images are allowed only inside the same capture folder, preferably under
+  `images/`
+- allowed image extensions:
+  - `.png`
+  - `.jpg`
+  - `.jpeg`
+  - `.webp`
+  - `.gif`
+  - `.svg`
+- fenced code blocks are allowed in `.md` and `.mdx` pages
+- at least one `src/content/docs/captures/<capture-slug>/index.md` or
+  `src/content/docs/captures/<capture-slug>/index.mdx` file exists
 - every capture page has required frontmatter:
   - `title`
   - `description`
@@ -204,13 +228,14 @@ Validation requirements:
   - `raw_issue`
   - `publish_status`
 - `publish_status` must be `published-summary`
-- block raw HTML tags likely to execute or embed active content:
+- block raw HTML and MDX patterns likely to execute or embed active content:
   - `<script`
   - `<iframe`
   - `<object`
   - `<embed`
   - `onerror=`
   - `onclick=`
+  - `dangerouslySetInnerHTML`
 - block obvious secrets:
   - `BEGIN PRIVATE KEY`
   - `api_key`
@@ -320,8 +345,12 @@ Status: Not done.
 - Run the PR creation script in dry-run mode against a fixture issue payload.
 - Run the validation script against:
   - a valid summary PR fixture
+  - a valid MDX summary PR fixture
+  - a valid summary PR fixture with a local image
+  - a valid summary PR fixture with fenced code blocks
   - a PR that changes `.github/workflows`
-  - a PR with an `.mdx` capture
+  - a PR with an image outside the owned capture folder
+  - a PR with unsafe MDX or HTML
   - a PR with copied raw article body
   - a PR with obvious secret-like text
 - Run `pnpm build`.
@@ -332,35 +361,32 @@ Status: Not done.
 2. Confirm a GitHub issue is created with `raw-inbox`.
 3. Confirm a branch and PR are created.
 4. Confirm the PR receives a `@codex` comment.
-5. Confirm Codex writes a summary page under `src/content/docs/captures/`.
+5. Confirm Codex writes or updates a capture folder under
+   `src/content/docs/captures/`.
 6. Confirm validation passes.
 7. Confirm the PR auto-merges.
 8. Confirm the deployed Starlight search can find the summary.
+9. Share the same URL again and confirm the next PR updates the existing
+   capture folder instead of creating a duplicate page.
 
 ### Negative Tests
 
 - Share text containing `Authorization: Bearer example`.
 - Share private-looking notes without a public URL.
 - Share a long article body.
-- Share the same URL twice.
 
 Expected result: these should not auto-merge.
 
-## Open Questions
+## Resolved Design Decisions
 
-- Should capture summaries go only under `src/content/docs/captures/`, or should
-  Codex place them into existing topic directories when obvious?
-- Should duplicate captures update the existing page, or should they be skipped?
-- Should the raw `raw/inbox` files remain in git history, or should the PR contain
-  only the published summary page after Codex processes the capture?
-- Should `raw-automerge` be default for all public URL captures, or only for
-  allowlisted domains?
-
-## Recommended Default Answers
-
-- Start with `src/content/docs/captures/` only. Move mature notes later.
-- Skip exact duplicate URLs.
-- Keep raw files in PRs initially for traceability, but do not include full copied
-  source bodies when the Shortcut only has a URL.
-- Default to auto-merge for public URL captures, but fail closed on any sensitive
-  signal.
+- Capture summaries should live in a dedicated generated structure under
+  `src/content/docs/captures/<capture-slug>/`.
+- Each capture should have an owned folder so the summary can grow into a small
+  file structure with `index.md` or `index.mdx`, optional local images, and
+  fenced code examples.
+- Duplicate `source_url` captures should update the existing capture folder
+  instead of creating a second page.
+- Raw `raw/inbox` files should remain in git history for traceability.
+- `raw-automerge` should be the default for all public URL captures, with the
+  validation workflow failing closed when sensitive, private, paywalled, or
+  unsafe content is detected.
