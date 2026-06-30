@@ -13,7 +13,7 @@ And here: https://docs.microsoft.com/en-us/windows/dev-environment/javascript/no
 
 ### Networks
 
-By default, networking won't work (DNS resolution fails) so run the following command:
+If networking isn't working (DNS resolution fails), try running the following command:
 
 ```bash
 sudo chattr -i /etc/resolv.conf
@@ -31,6 +31,7 @@ To use your Windows credentials to access Git repos in WLS2 run the following co
 ```bash
 git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager-core.exe"
 ```
+You may need to change the file path to wherever git credential manager is installed.
 
 ### Typescript server crashing
 
