@@ -2,7 +2,12 @@
 import type { Props } from '@astrojs/starlight/props';
 import Default from '@astrojs/starlight/components/Head.astro';
 import Analytics from '@vercel/analytics/astro';
+import SpeedInsights from '@vercel/speed-insights/astro';
+
+const { head } = Astro.locals.starlightRoute;
 ---
 
+{head.map(({ tag: Tag, attrs, content }) => <Tag {...attrs} set:html={content} />)}
 <Default {...Astro.props}><slot /></Default>
 <Analytics />
+<SpeedInsights />
