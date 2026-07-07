@@ -26,7 +26,7 @@ importers:
       '@vercel/analytics':
         specifier: ^2.0.1
         version: 2.0.1
-     '@vercel/speed-insights':
+      '@vercel/speed-insights':
         specifier: ^2.0.0
         version: 2.0.0
       astro:
