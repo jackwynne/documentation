@@ -82,6 +82,9 @@ export default defineConfig({
         // Path to your Tailwind base styles:
         './src/styles/global.css',
       ],
+      components: {
+        Head: './src/components/Head.astro',
+      },
     }),
     // tailwind({
     //   applyBaseStyles: false,
