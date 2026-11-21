@@ -500,6 +500,10 @@ async function github(repoName, route, options = {}) {
       details = response.statusText ? `: ${response.statusText}` : "";
     }
 
+    if (response.status === 403 && details.includes("not permitted to create or approve pull requests")) {
+      details += " Enable Settings -> Actions -> General -> Workflow permissions -> Allow GitHub Actions to create and approve pull requests, or add a RAW_CAPTURE_BOT_TOKEN secret with contents, issues, and pull requests write access.";
+    }
+
     const error = new Error(`GitHub API ${response.status}${details}`);
     error.status = response.status;
     throw error;

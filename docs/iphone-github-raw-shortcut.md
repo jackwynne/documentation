@@ -57,6 +57,16 @@ The GitHub Actions workflow creates these labels when it runs:
 - `raw-capture`
 - `raw-automerge`
 
+## GitHub Actions PR Permission
+
+The raw inbox workflow creates branches and pull requests from GitHub Actions.
+Enable one of these options before running it:
+
+- Preferred: in GitHub, open Settings -> Actions -> General -> Workflow permissions, then enable `Allow GitHub Actions to create and approve pull requests`.
+- Alternative: add a repository secret named `RAW_CAPTURE_BOT_TOKEN` with contents, issues, and pull requests write access.
+
+The workflow uses `RAW_CAPTURE_BOT_TOKEN` when it exists. Otherwise it uses the built-in `GITHUB_TOKEN`.
+
 ## Working Shortcut
 
 Create a new iOS Shortcut called `Send to Raw`.
