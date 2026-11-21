@@ -1,15 +1,11 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
-import tailwind from "@astrojs/tailwind";
-
 import tailwindcss from "@tailwindcss/vite";
 
 // https://astro.build/config
 export default defineConfig({
   site: "https://documentation-zeta-nine.vercel.app",
 
-  // output: "server",
-  // adapter: vercel(),
   integrations: [
     starlight({
       title: "Docs",
@@ -86,9 +82,6 @@ export default defineConfig({
         Head: './src/components/Head.astro',
       },
     }),
-    // tailwind({
-    //   applyBaseStyles: false,
-    // }),
   ],
 
   vite: {
