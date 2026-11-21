@@ -9,7 +9,12 @@ on:
       - reopened
   schedule:
     - cron: "17 * * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Optional single GitHub issue number to process"
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -48,6 +53,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          token: ${{ secrets.RAW_CAPTURE_BOT_TOKEN || github.token }}
 
       - name: Set up Node
         if: steps.should-run.outputs.run == 'true'
@@ -59,13 +65,11 @@ jobs:
       - name: Create capture PR
         if: steps.should-run.outputs.run == 'true'
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          GITHUB_TOKEN: ${{ secrets.RAW_CAPTURE_BOT_TOKEN || github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
         run: |
-          args="--ensure-labels"
-
           if [ -n "$ISSUE_NUMBER" ]; then
-            args="$args --issue-number $ISSUE_NUMBER"
+            node scripts/create-raw-capture-pr.mjs --ensure-labels --issue-number "$ISSUE_NUMBER"
+          else
+            node scripts/create-raw-capture-pr.mjs --ensure-labels
           fi
-
-          node scripts/create-raw-capture-pr.mjs $args

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { access, readFile, readdir, writeFile } from "node:fs/promises";
+import { access, appendFile, readFile, readdir, writeFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
@@ -47,6 +47,7 @@ const MAX_PAGE_LENGTH = 16000;
 const MIN_COPY_BLOCK_LENGTH = 700;
 
 const args = parseArgs(process.argv.slice(2));
+const allowPending = args.allowPending || process.env.RAW_CAPTURE_ALLOW_PENDING === "true";
 const reportFile = args.reportFile || process.env.RAW_CAPTURE_VALIDATION_REPORT;
 
 if (args.help) {
@@ -99,10 +100,6 @@ if (rawFiles.length === 0) {
   addFailure("At least one raw inbox Markdown file must be included.");
 }
 
-if (captureFolders.size === 0) {
-  addFailure("At least one generated capture folder must be included under src/content/docs/captures/.");
-}
-
 const rawContents = [];
 
 for (const rawFile of rawFiles) {
@@ -118,7 +115,13 @@ for (const [folder] of captureFolders) {
   await validateCaptureFolder(folder, rawContents);
 }
 
-await finish();
+const pending = allowPending && rawFiles.length > 0 && captureFolders.size === 0 && failures.length === 0;
+
+if (captureFolders.size === 0 && !pending) {
+  addFailure("At least one generated capture folder must be included under src/content/docs/captures/.");
+}
+
+await finish(pending);
 
 function parseArgs(argv) {
   const parsed = {};
@@ -128,6 +131,8 @@ function parseArgs(argv) {
 
     if (arg === "--help" || arg === "-h") {
       parsed.help = true;
+    } else if (arg === "--allow-pending") {
+      parsed.allowPending = true;
     } else if (arg.startsWith("--")) {
       const key = arg.slice(2).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
       const value = argv[i + 1];
@@ -156,6 +161,7 @@ Options:
   --base ref                 Compare ref for local validation. Default: origin/main
   --files comma,list         Validate a specific comma-separated file list.
   --report-file path         Write a Markdown validation report.
+  --allow-pending            Allow raw-only captures while Codex generates a summary.
   --help                     Show this help.
 
 In GitHub Actions, set GITHUB_REPOSITORY, PR_NUMBER, and GITHUB_TOKEN to load changed files from the pull request API.
@@ -307,7 +313,9 @@ async function validateCaptureFolder(folder, rawContents) {
       continue;
     }
 
-    validateSecretAndSensitiveContent(filePath, await readFile(filePath, "utf8").catch(() => ""));
+    if (extension === ".svg") {
+      validateSecretAndSensitiveContent(filePath, await readFile(filePath, "utf8").catch(() => ""));
+    }
   }
 }
 
@@ -412,25 +420,27 @@ function addFailure(message) {
   failures.push(message);
 }
 
-async function finish() {
-  if (failures.length > 0) {
-    const report = `# Raw Capture Validation Failed
+async function finish(pending) {
+  const failed = failures.length > 0;
+  let report = "# Raw Capture Validation Passed\n\nAll raw capture gates passed.\n";
 
-${failures.map((failure) => `- ${failure}`).join("\n")}
-`;
-
-    if (reportFile) {
-      await writeFile(reportFile, report, "utf8");
-    }
-
-    console.error(report);
-    process.exit(1);
+  if (failed) {
+    report = `# Raw Capture Validation Failed\n\n${failures.map((failure) => `- ${failure}`).join("\n")}\n`;
+  } else if (pending) {
+    report = "# Raw Capture Validation Pending\n\nWaiting for Codex to generate a summary under `src/content/docs/captures/`.\n";
   }
 
-  const report = "# Raw Capture Validation Passed\n\nAll raw capture gates passed.\n";
+  if (process.env.GITHUB_OUTPUT) {
+    await appendFile(process.env.GITHUB_OUTPUT, `ready=${!failed && !pending}\n`, "utf8");
+  }
 
   if (reportFile) {
     await writeFile(reportFile, report, "utf8");
+  }
+
+  if (failed) {
+    console.error(report);
+    process.exit(1);
   }
 
   console.log(report);

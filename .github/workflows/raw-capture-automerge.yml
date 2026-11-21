@@ -28,7 +28,9 @@ jobs:
     permissions:
       contents: read
       issues: write
-      pull-requests: read
+      pull-requests: write
+    outputs:
+      ready: ${{ steps.validate.outputs.ready }}
 
     steps:
       - name: Checkout pull request head
@@ -38,7 +40,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - name: Set up Node
         uses: actions/setup-node@v6
@@ -57,12 +59,13 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          RAW_CAPTURE_ALLOW_PENDING: ${{ contains(github.event.pull_request.labels.*.name, 'raw-codex-pending') }}
           RAW_CAPTURE_VALIDATION_REPORT: ${{ runner.temp }}/raw-capture-validation.md
         run: node scripts/validate-capture-pr.mjs
 
       - name: Build site
         id: build
-        if: steps.validate.outcome == 'success'
+        if: steps.validate.outcome == 'success' && steps.validate.outputs.ready == 'true'
         continue-on-error: true
         run: pnpm build
 
@@ -104,7 +107,7 @@ jobs:
   automerge:
     name: Merge safe raw capture PR
     needs: validate
-    if: contains(github.event.pull_request.labels.*.name, 'raw-capture') && contains(github.event.pull_request.labels.*.name, 'raw-automerge')
+    if: needs.validate.outputs.ready == 'true' && contains(github.event.pull_request.labels.*.name, 'raw-capture') && contains(github.event.pull_request.labels.*.name, 'raw-automerge')
     runs-on: ubuntu-latest
     permissions:
       contents: write

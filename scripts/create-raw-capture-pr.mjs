@@ -50,6 +50,10 @@ if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
   fail("--limit must be an integer from 1 to 100.");
 }
 
+if (args.issueNumber && !/^[1-9][0-9]*$/.test(args.issueNumber)) {
+  fail("--issue-number must be a positive integer.");
+}
+
 if (!args.dryRun) {
   requireCleanWorktree();
   configureGitIdentity();
@@ -75,68 +79,82 @@ const originalRef = args.dryRun ? null : git(["branch", "--show-current"], { all
 let created = 0;
 let skipped = 0;
 
-for (const issue of captures) {
-  const capture = parseCapture(issue);
-  const slug = slugify(capture.title || issue.title || `issue-${issue.number}`);
-  const branch = `capture/issue-${issue.number}-${slug}`;
-  const rawPath = path.join(RAW_OUT_DIR, issueFileName(issue, slug));
-  const duplicate = capture.sourceUrl ? existingCaptures.get(normalizeUrl(capture.sourceUrl)) : null;
-  const rawMarkdown = formatIssueAsMarkdown(issue, repo, capture);
-  const prTitle = duplicate
-    ? `Update capture from issue #${issue.number}: ${capture.title}`
-    : `Process raw capture from issue #${issue.number}: ${capture.title}`;
-  const prBody = formatPullRequestBody(issue, capture, rawPath, duplicate);
-  const codexComment = formatCodexComment(promptTemplate, issue, capture, rawPath, duplicate);
+try {
+  for (const issue of captures) {
+    if (!Number.isInteger(issue.number) || issue.number <= 0) {
+      throw new Error("Capture issue number must be a positive integer.");
+    }
 
-  if (await remoteBranchHasOpenPr(branch)) {
-    skipped += 1;
-    console.log(`skip issue #${issue.number}; open PR already exists for ${branch}`);
-    continue;
-  }
+    const capture = parseCapture(issue);
+    const slug = slugify(capture.title || issue.title || `issue-${issue.number}`);
+    const branch = `capture/issue-${issue.number}-${slug}`;
+    const rawPath = path.join(RAW_OUT_DIR, issueFileName(issue, slug));
+    if (!path.resolve(rawPath).startsWith(path.resolve(RAW_OUT_DIR) + path.sep)) {
+      throw new Error(`Raw capture path for issue #${issue.number} is outside ${RAW_OUT_DIR}.`);
+    }
 
-  if (args.dryRun) {
-    console.log(`would create branch ${branch}`);
-    console.log(`would write ${rawPath}`);
-    console.log(`would open PR: ${prTitle}`);
-    console.log(duplicate ? `would ask Codex to update ${duplicate.folder}` : "would ask Codex to create a new capture folder");
+    const duplicate = capture.sourceUrl ? existingCaptures.get(normalizeUrl(capture.sourceUrl)) : null;
+    const rawMarkdown = formatIssueAsMarkdown(issue, repo, capture);
+    const prTitle = duplicate
+      ? `Update capture from issue #${issue.number}: ${capture.title}`
+      : `Process raw capture from issue #${issue.number}: ${capture.title}`;
+    const prBody = formatPullRequestBody(issue, capture, rawPath, duplicate);
+    const codexComment = formatCodexComment(promptTemplate, issue, capture, rawPath, duplicate);
+
+    if (await remoteBranchHasOpenPr(branch)) {
+      skipped += 1;
+      console.log(`skip issue #${issue.number}; open PR already exists for ${branch}`);
+      continue;
+    }
+
+    if (args.dryRun) {
+      console.log(`would create branch ${branch}`);
+      console.log(`would write ${rawPath}`);
+      console.log(`would open PR: ${prTitle}`);
+      console.log(duplicate ? `would ask Codex to update ${duplicate.folder}` : "would ask Codex to create a new capture folder");
+      created += 1;
+      continue;
+    }
+
+    if (remoteBranchMatchesCapture(branch, baseSha, rawPath, rawMarkdown)) {
+      console.log(`reuse origin/${branch}; capture is unchanged`);
+    } else {
+      git(["checkout", "-B", branch, baseSha]);
+      await mkdir(RAW_OUT_DIR, { recursive: true });
+      await writeFile(rawPath, rawMarkdown, "utf8");
+      git(["add", "-f", rawPath]);
+
+      if (git(["diff", "--cached", "--quiet"], { allowFailure: true }).status === 0) {
+        skipped += 1;
+        console.log(`skip issue #${issue.number}; no file changes for ${rawPath}`);
+        git(["checkout", baseSha]);
+        continue;
+      }
+
+      git(["commit", "-m", `Import raw capture from issue #${issue.number}`]);
+      git(["push", "--force-with-lease", "origin", branch]);
+    }
+
+    const pr = await createPullRequest(repo, {
+      title: prTitle,
+      head: branch,
+      base: args.base || "main",
+      body: prBody,
+    });
+
+    await addLabels(repo, pr.number, PR_LABELS);
+    await createIssueComment(repo, pr.number, codexComment);
+    await createIssueComment(repo, issue.number, `Created raw capture PR: ${pr.html_url}`);
+    await addLabels(repo, issue.number, [CREATED_LABEL]);
+    await removeLabel(repo, issue.number, label);
+
     created += 1;
-    continue;
+    console.log(`created PR #${pr.number} for issue #${issue.number}: ${pr.html_url}`);
   }
-
-  git(["checkout", "-B", branch, baseSha]);
-  await mkdir(RAW_OUT_DIR, { recursive: true });
-  await writeFile(rawPath, rawMarkdown, "utf8");
-  git(["add", "-f", rawPath]);
-
-  if (git(["diff", "--cached", "--quiet"], { allowFailure: true }).status === 0) {
-    skipped += 1;
-    console.log(`skip issue #${issue.number}; no file changes for ${rawPath}`);
-    git(["checkout", baseSha]);
-    continue;
+} finally {
+  if (!args.dryRun && originalRef) {
+    git(["checkout", originalRef], { allowFailure: true });
   }
-
-  git(["commit", "-m", `Import raw capture from issue #${issue.number}`]);
-  git(["push", "--force-with-lease", "origin", branch]);
-
-  const pr = await createPullRequest(repo, {
-    title: prTitle,
-    head: branch,
-    base: args.base || "main",
-    body: prBody,
-  });
-
-  await addLabels(repo, pr.number, PR_LABELS);
-  await createIssueComment(repo, pr.number, codexComment);
-  await createIssueComment(repo, issue.number, `Created raw capture PR: ${pr.html_url}`);
-  await addLabels(repo, issue.number, [CREATED_LABEL]);
-  await removeLabel(repo, issue.number, label);
-
-  created += 1;
-  console.log(`created PR #${pr.number} for issue #${issue.number}: ${pr.html_url}`);
-}
-
-if (!args.dryRun) {
-  git(["checkout", originalRef]);
 }
 
 console.log(`Processed ${created}, skipped ${skipped}.`);
@@ -262,13 +280,18 @@ function inferSourceType(sourceUrl) {
   try {
     const host = new URL(sourceUrl).hostname;
 
-    if (host.includes("github.com")) return "github";
-    if (host.includes("youtube.com") || host.includes("youtu.be")) return "video";
-    if (host.includes("x.com") || host.includes("twitter.com") || host.includes("bsky.app")) return "social";
+    if (matchesHost(host, "github.com")) return "github";
+    if (matchesHost(host, "youtube.com") || matchesHost(host, "youtu.be")) return "video";
+    if (matchesHost(host, "x.com") || matchesHost(host, "twitter.com") || matchesHost(host, "bsky.app")) return "social";
     return "article";
   } catch {
     return "url";
   }
+}
+
+function matchesHost(host, domain) {
+  const normalized = host.toLowerCase();
+  return normalized === domain || normalized.endsWith(`.${domain}`);
 }
 
 function cleanupTitle(title) {
@@ -418,6 +441,22 @@ async function remoteBranchHasOpenPr(branch) {
   return pulls.length > 0;
 }
 
+function remoteBranchMatchesCapture(branch, baseSha, rawPath, rawMarkdown) {
+  const remoteRef = `refs/remotes/origin/${branch}`;
+  const remoteCommit = git(["rev-parse", "--verify", "--quiet", remoteRef], { allowFailure: true });
+  if (remoteCommit.status !== 0) return false;
+
+  const remoteSha = remoteCommit.stdout.trim();
+  const parents = git(["show", "-s", "--format=%P", remoteSha]).stdout.trim();
+  if (parents !== baseSha) return false;
+
+  const changedPaths = git(["diff", "--name-only", "--no-renames", "-z", baseSha, remoteSha]).stdout;
+  if (changedPaths !== `${rawPath}\0`) return false;
+
+  const remoteCapture = git(["show", `${remoteSha}:${rawPath}`], { allowFailure: true });
+  return remoteCapture.status === 0 && remoteCapture.stdout === rawMarkdown;
+}
+
 async function createPullRequest(repoName, body) {
   return github(repoName, "/pulls", {
     method: "POST",
@@ -498,6 +537,10 @@ async function github(repoName, route, options = {}) {
       details = payload.message ? `: ${payload.message}` : "";
     } catch {
       details = response.statusText ? `: ${response.statusText}` : "";
+    }
+
+    if (response.status === 403 && details.includes("not permitted to create or approve pull requests")) {
+      details += " Enable Settings -> Actions -> General -> Workflow permissions -> Allow GitHub Actions to create and approve pull requests, or add a RAW_CAPTURE_BOT_TOKEN secret with contents, issues, and pull requests write access.";
     }
 
     const error = new Error(`GitHub API ${response.status}${details}`);

@@ -50,14 +50,24 @@ if (captures.length === 0) {
   process.exit(0);
 }
 
-await mkdir(outDir, { recursive: true });
+const resolvedOutDir = path.resolve(outDir);
+await mkdir(resolvedOutDir, { recursive: true });
 
 let created = 0;
 let skipped = 0;
 let mutated = 0;
 
 for (const issue of captures) {
-  const filePath = path.join(outDir, issueFileName(issue));
+  if (!Number.isInteger(issue.number) || issue.number < 1) {
+    fail("GitHub issue number must be a positive integer.");
+  }
+
+  const filePath = path.resolve(resolvedOutDir, issueFileName(issue));
+
+  if (path.dirname(filePath) !== resolvedOutDir) {
+    fail(`Import path is outside the raw inbox directory for issue #${issue.number}.`);
+  }
+
   const exists = await fileExists(filePath);
 
   if (exists) {
